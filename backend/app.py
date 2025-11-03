@@ -5,6 +5,7 @@ from __future__ import annotations
 from flask import Flask, jsonify
 
 from .config import load_config, Config
+from .api import api_bp
 
 
 def create_app(config: Config | None = None) -> Flask:
@@ -23,6 +24,8 @@ def create_app(config: Config | None = None) -> Flask:
     def health() -> tuple:
         """Simple endpoint Railway can use for health checks."""
         return jsonify(status="ok", environment=app.config["ENVIRONMENT"]), 200
+
+    app.register_blueprint(api_bp)
 
     return app
 
