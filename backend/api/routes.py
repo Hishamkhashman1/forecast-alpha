@@ -1,59 +1,117 @@
-"""Stub API endpoints for the demo workflow."""
+"""API endpoints for the demo workflow."""
 
 from __future__ import annotations
 
 from flask import current_app, jsonify, request
+from pydantic import ValidationError
+
+from backend.models.requests import AnalysisRequest, ConnectionRequest
+from backend.models.responses import AnalysisResponse
+from backend.services import (
+    AnalyticsService,
+    DataPipelineService,
+    DatabaseService,
+    registry,
+)
+from backend.utils import build_connection_url
 
 from . import api_bp
 
 
+def _resolve_database_url(connection_id: str) -> str | None:
+    database_url = registry.resolve(connection_id)
+    if not database_url:
+        current_app.logger.error("Unknown connection id requested: %s", connection_id)
+    return database_url
+
+
 @api_bp.route("/connect", methods=["POST"])
 def connect_database():
-    """Mock endpoint that pretends to validate database credentials."""
+    """Validate database credentials and return a connection token."""
     payload = request.get_json(silent=True) or {}
-    current_app.logger.info("Received connect request: %s", payload)
+    try:
+        data = ConnectionRequest.model_validate(payload)
+    except ValidationError as exc:
+        return jsonify(status="error", errors=exc.errors()), 400
 
-    # TODO: Replace with real connection validation using SQLAlchemy engine.
-    return jsonify(
-        status="success",
-        message="Connection parameters accepted.",
-        connection_id="demo-connection-id",
-    ), 200
+    database_url = data.engine_url or build_connection_url(
+        driver=data.driver,
+        username=data.username,
+        password=data.password,
+        host=data.host,
+        port=data.port,
+        database=data.database,
+        options=data.options,
+    )
+
+    service = DatabaseService(database_url)
+    try:
+        service.validate_connection()
+    except Exception as exc:  # pylint: disable=broad-except
+        current_app.logger.exception("Database connection failed")
+        return jsonify(status="error", message="Unable to connect to database", detail=str(exc)), 400
+
+    token = registry.register(database_url)
+    return jsonify(status="success", connection_id=token), 200
 
 
 @api_bp.route("/tables", methods=["GET"])
 def list_tables():
-    """Mock endpoint returning a list of available tables."""
+    """Return the tables available for a given connection id."""
     connection_id = request.args.get("connection_id")
-    current_app.logger.info("Listing tables for connection %s", connection_id)
+    if not connection_id:
+        return jsonify(status="error", message="connection_id is required"), 400
 
-    # TODO: Replace with real table discovery logic.
-    return jsonify(
-        tables=[
-            {"name": "sales", "columns": ["date", "region", "revenue"]},
-            {"name": "inventory", "columns": ["sku", "category", "quantity"]},
-        ]
-    ), 200
+    database_url = _resolve_database_url(connection_id)
+    if not database_url:
+        return jsonify(status="error", message="Unknown connection_id"), 404
+
+    service = DatabaseService(database_url)
+    try:
+        tables = service.list_tables()
+    except Exception as exc:  # pylint: disable=broad-except
+        current_app.logger.exception("Failed to list tables")
+        return jsonify(status="error", message="Unable to list tables", detail=str(exc)), 500
+
+    return jsonify(status="success", tables=tables), 200
 
 
 @api_bp.route("/analyze", methods=["POST"])
 def analyze_data():
-    """Mock endpoint that returns placeholder anomaly and forecast data."""
+    """Clean data, detect anomalies, and forecast trends for a selected table."""
     payload = request.get_json(silent=True) or {}
-    current_app.logger.info("Analyze request payload: %s", payload)
+    try:
+        data = AnalysisRequest.model_validate(payload)
+    except ValidationError as exc:
+        return jsonify(status="error", errors=exc.errors()), 400
 
-    # TODO: Replace with the real preprocessing + modeling pipeline.
-    return jsonify(
-        anomalies=[
-            {"timestamp": "2024-10-01", "metric": "revenue", "severity": "high"},
-            {"timestamp": "2024-10-05", "metric": "revenue", "severity": "medium"},
-        ],
-        forecast={
-            "metric": "revenue",
-            "values": [
-                {"date": "2024-10-06", "prediction": 120000},
-                {"date": "2024-10-07", "prediction": 122500},
-                {"date": "2024-10-08", "prediction": 125000},
-            ],
-        },
-    ), 200
+    database_url = _resolve_database_url(data.connection_id)
+    if not database_url:
+        return jsonify(status="error", message="Unknown connection_id"), 404
+
+    database_service = DatabaseService(database_url)
+    try:
+        raw_frame = database_service.fetch_table(data.table, limit=data.limit)
+    except Exception as exc:  # pylint: disable=broad-except
+        current_app.logger.exception("Failed to fetch table data")
+        return jsonify(status="error", message="Unable to fetch table data", detail=str(exc)), 500
+
+    missing_columns = [col for col in [data.target_column, data.date_column] if col and col not in raw_frame.columns]
+    if missing_columns:
+        return jsonify(status="error", message="Missing columns in dataset", missing_columns=missing_columns), 400
+
+    pipeline = DataPipelineService()
+    cleaned_frame = pipeline.clean(raw_frame)
+    _ = pipeline.normalize(cleaned_frame)
+
+    analytics = AnalyticsService()
+    anomalies = analytics.detect_anomalies(cleaned_frame, data.target_column, data.date_column)
+    forecast_points = analytics.forecast(cleaned_frame, data.target_column, data.date_column)
+
+    response_model = AnalysisResponse(
+        anomalies=anomalies,
+        forecast=forecast_points,
+        pipeline_steps=pipeline.summary(),
+    )
+
+    return jsonify(status="success", **response_model.model_dump()), 200

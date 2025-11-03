@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 
 class ConnectionRequest(BaseModel):
@@ -15,6 +15,9 @@ class ConnectionRequest(BaseModel):
     password: str
     database: str
     ssl: Optional[bool] = False
+    driver: str = "mysql+pymysql"
+    engine_url: Optional[str] = None
+    options: Optional[Dict[str, str]] = None
 
 
 class AnalysisRequest(BaseModel):

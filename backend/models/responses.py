@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel
-from typing import List
+from pydantic import BaseModel, Field
+from typing import List, Optional
 
 
 class AnomalyRecord(BaseModel):
@@ -13,6 +13,7 @@ class AnomalyRecord(BaseModel):
     metric: str
     severity: str
     value: float | None = None
+    z_score: Optional[float] = None
 
 
 class ForecastRecord(BaseModel):
@@ -27,4 +28,4 @@ class AnalysisResponse(BaseModel):
 
     anomalies: List[AnomalyRecord]
     forecast: List[ForecastRecord]
-    pipeline_steps: List[str] = []
+    pipeline_steps: List[str] = Field(default_factory=list)

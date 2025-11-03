@@ -37,19 +37,18 @@ With the virtual environment active:
 pytest
 ```
 
-The suite currently includes placeholder tests under `tests/` that exercise the health endpoint and will expand alongside the data pipeline.
+The suite exercises the health endpoint plus unit tests for the pipeline, analytics, and utility helpers. Extend these as the ML workflow matures.
 
-### API Blueprint (stub)
+### API Blueprint
 
-The `/api` blueprint currently exposes placeholder endpoints in `backend/api/routes.py`:
+The `/api` blueprint in `backend/api/routes.py` now wires the end-to-end workflow:
 
-- `POST /api/connect` — logs connection details and returns a mock `connection_id`.
-- `GET /api/tables` — returns sample table metadata.
-- `POST /api/analyze` — returns dummy anomalies and forecast values.
-
-Replace the TODOs with the real database, preprocessing, and modeling logic as the project evolves.
+- `POST /api/connect` — validates credentials using SQLAlchemy and returns a connection token stored in-memory.
+- `GET /api/tables` — reflects the connected database to list tables and columns.
+- `POST /api/analyze` — pulls data into pandas, runs the cleaning pipeline, detects anomalies, and forecasts future values.
 
 ### Next Up
 
-- Integrate real database connectivity and table discovery services.
-- Flesh out automated tests to cover the data pipeline.
+- Persist connection state (or swap in a managed secrets store) instead of the in-memory registry.
+- Expand anomaly and forecast models with configurable strategies and performance monitoring.
+- Build the front-end demo that consumes these endpoints.
