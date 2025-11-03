@@ -27,8 +27,9 @@ sudo apt install -y python3-venv python3-dev build-essential
    flask run --debug
    ```
 
+Configuration values are pulled from environment variables. See `backend/config.py` for available settings (e.g., `SECRET_KEY`, `DATABASE_URL`, `ENVIRONMENT`).
+
 ### Next Up
 
-- Add environment-driven configuration in `backend/config.py`.
 - Implement API blueprints for database connection and analysis.
 - Flesh out automated tests to cover the data pipeline.

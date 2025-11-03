@@ -1,15 +1,28 @@
+"""Main application factory for Forecast Alpha."""
+
+from __future__ import annotations
+
 from flask import Flask, jsonify
-import os
+
+from .config import load_config, Config
 
 
-def create_app() -> Flask:
+def create_app(config: Config | None = None) -> Flask:
     """Factory that creates the Flask application."""
     app = Flask(__name__)
+    app_config = config or load_config()
+    app.config.update(
+        SECRET_KEY=app_config.SECRET_KEY,
+        SQLALCHEMY_DATABASE_URI=app_config.SQLALCHEMY_DATABASE_URI,
+        SQLALCHEMY_TRACK_MODIFICATIONS=app_config.SQLALCHEMY_TRACK_MODIFICATIONS,
+        ENVIRONMENT=app_config.ENVIRONMENT,
+    )
+    app.config["APP_CONFIG"] = app_config
 
     @app.route("/health", methods=["GET"])
     def health() -> tuple:
         """Simple endpoint Railway can use for health checks."""
-        return jsonify(status="ok"), 200
+        return jsonify(status="ok", environment=app.config["ENVIRONMENT"]), 200
 
     return app
 
@@ -18,5 +31,9 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    current_config: Config = app.config["APP_CONFIG"]
+    app.run(
+        host="0.0.0.0",
+        port=current_config.PORT,
+        debug=current_config.ENVIRONMENT == "development",
+    )
