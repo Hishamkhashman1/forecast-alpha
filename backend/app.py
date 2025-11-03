@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 
 from .config import load_config, Config
 from .api import api_bp
@@ -10,7 +10,7 @@ from .api import api_bp
 
 def create_app(config: Config | None = None) -> Flask:
     """Factory that creates the Flask application."""
-    app = Flask(__name__)
+    app = Flask(__name__, template_folder="templates", static_folder="static")
     app_config = config or load_config()
     app.config.update(
         SECRET_KEY=app_config.SECRET_KEY,
@@ -19,6 +19,11 @@ def create_app(config: Config | None = None) -> Flask:
         ENVIRONMENT=app_config.ENVIRONMENT,
     )
     app.config["APP_CONFIG"] = app_config
+
+    @app.route("/", methods=["GET"])
+    def index() -> str:
+        """Serve the landing page."""
+        return render_template("index.html")
 
     @app.route("/health", methods=["GET"])
     def health() -> tuple:

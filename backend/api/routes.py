@@ -90,8 +90,12 @@ def analyze_data():
         return jsonify(status="error", message="Unknown connection_id"), 404
 
     database_service = DatabaseService(database_url)
+    rows_limit = data.limit
+    if data.max_rows:
+        rows_limit = min(rows_limit, data.max_rows)
+
     try:
-        raw_frame = database_service.fetch_table(data.table, limit=data.limit)
+        raw_frame = database_service.fetch_table(data.table, limit=rows_limit)
     except Exception as exc:  # pylint: disable=broad-except
         current_app.logger.exception("Failed to fetch table data")
         return jsonify(status="error", message="Unable to fetch table data", detail=str(exc)), 500
@@ -102,10 +106,21 @@ def analyze_data():
 
     pipeline = DataPipelineService()
     cleaned_frame = pipeline.clean(raw_frame)
-    _ = pipeline.normalize(cleaned_frame)
+    normalized_frame = pipeline.normalize(cleaned_frame)
 
-    analytics = AnalyticsService()
-    anomalies = analytics.detect_anomalies(cleaned_frame, data.target_column, data.date_column)
+    analytics = AnalyticsService(
+        anomaly_threshold=data.anomaly_threshold,
+        forecast_periods=data.forecast_periods,
+        anomaly_method=data.anomaly_method,
+        forecast_method=data.forecast_method,
+        max_samples=data.max_rows,
+    )
+    anomalies = analytics.detect_anomalies(
+        cleaned_frame,
+        data.target_column,
+        data.date_column,
+        features=normalized_frame,
+    )
     forecast_points = analytics.forecast(cleaned_frame, data.target_column, data.date_column)
 
     response_model = AnalysisResponse(

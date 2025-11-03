@@ -30,3 +30,17 @@ def test_forecast_returns_requested_periods():
     assert len(forecast) == 2
     for record in forecast:
         assert "date" in record and "prediction" in record
+
+
+def test_isolation_forest_anomaly_method():
+    frame = _build_sample_frame()
+    service = AnalyticsService(anomaly_method="isolation_forest", max_samples=None)
+    anomalies = service.detect_anomalies(frame, "revenue", "date", features=frame)
+    assert isinstance(anomalies, list)
+
+
+def test_holt_winters_forecast_method():
+    frame = _build_sample_frame()
+    service = AnalyticsService(forecast_method="holt_winters", forecast_periods=2)
+    forecast = service.forecast(frame, "revenue", "date")
+    assert len(forecast) == 2

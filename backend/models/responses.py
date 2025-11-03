@@ -14,6 +14,7 @@ class AnomalyRecord(BaseModel):
     severity: str
     value: float | None = None
     z_score: Optional[float] = None
+    score: Optional[float] = None
 
 
 class ForecastRecord(BaseModel):

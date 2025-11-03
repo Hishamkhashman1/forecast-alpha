@@ -29,3 +29,8 @@ class AnalysisRequest(BaseModel):
     target_column: str
     date_column: Optional[str] = None
     limit: Optional[int] = Field(default=10000, gt=0)
+    anomaly_method: str = Field(default="zscore")
+    anomaly_threshold: float = Field(default=3.0, gt=0)
+    forecast_method: str = Field(default="linear_regression")
+    forecast_periods: int = Field(default=3, ge=1, le=30)
+    max_rows: Optional[int] = Field(default=50000, gt=0)

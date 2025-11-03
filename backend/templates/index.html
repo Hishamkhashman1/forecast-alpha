@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forecast Alpha</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <div class="container nav-inner">
+      <div class="brand">
+        <div class="logo-circle"></div>
+        <span>Forecast Alpha</span>
+      </div>
+      <nav class="nav-links">
+        <a href="#use-cases">Use Cases</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#integrations">Integrations</a>
+        <a href="#testimonials">Customers</a>
+        <a href="#pricing">Pricing</a>
+      </nav>
+      <div class="nav-actions">
+        <button class="btn-outline">Sign In</button>
+        <button class="btn-dark">Get a Free Data Audit</button>
+      </div>
+    </div>
+  </header>
+<div class="overlay-banner">
+  <p>🚧 Rebranding in progress — this is a sneak peek 👀</p>
+</div>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container hero-inner">
+      <div class="hero-text">
+        <h1>Predict. Detect. <span>Optimize.</span></h1>
+        <p>
+          Turn messy data into measurable outcomes. Forecast Alpha brings anomaly detection and forecasting together so you can catch revenue leaks and act before they escalate.
+        </p>
+        <div class="buttons">
+          <button class="btn-dark" id="launch-demo">Launch Demo</button>
+          <button class="btn-outline" data-scroll="#demo">See Live Examples</button>
+        </div>
+        <small>Lorem ipsum dolor sit amet, consectetur adipiscing elit</small>
+      </div>
+<div class="mockup">
+  <svg width="400" height="240" viewBox="0 0 400 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="400" height="240" rx="20" fill="url(#bg)"/>
+    <polyline points="20,200 80,160 140,180 200,120 260,140 320,60 380,100"
+              fill="none" stroke="#0ea5e9" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="200" cy="120" r="6" fill="#6366f1"/>
+    <circle cx="320" cy="60" r="6" fill="#ef4444"/>
+    <defs>
+      <linearGradient id="bg" x1="0" y1="0" x2="400" y2="240" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#f8fafc"/>
+        <stop offset="1" stop-color="#eef2ff"/>
+      </linearGradient>
+    </defs>
+  </svg>
+</div>
+
+  </section>
+
+  <!-- PROBLEM / SOLUTION -->
+<section class="section two-col">
+  <div class="container two-col-inner">
+    <div>
+      <h2>The Problem</h2>
+      <ul>
+        <li>Revenue and cost anomalies hide in thousands of metrics.</li>
+        <li>Manual monitoring is slow; alerts are noisy and late.</li>
+        <li>Teams lack a common view to prioritize actions.</li>
+      </ul>
+    </div>
+    <div>
+      <h2>Our Approach</h2>
+      <ul>
+        <li>Unified anomaly detection + forecasting across data sources.</li>
+        <li>Smart, de-duplicated alerts with business context.</li>
+        <li>Playbooks that turn signals into actions.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+  <!-- USE CASES -->
+  <section id="use-cases" class="section light-bg">
+    <div class="container">
+      <h2>Use Cases</h2>
+      <p>Pick a lane — each card links to a deeper page later.</p>
+      <div class="cards">
+        <div class="card">
+          <div class="icon"></div>
+          <h3>Predictive Forecasting</h3>
+          <p>Sales, demand, occupancy — reliable horizons for planning.</p>
+          <a href="#">Learn more</a>
+        </div>
+        <div class="card">
+          <div class="icon"></div>
+          <h3>Anomaly Detection</h3>
+          <p>Catch drops, spikes, and drifts before they cost you.</p>
+          <a href="#">Learn more</a>
+        </div>
+        <div class="card">
+          <div class="icon"></div>
+          <h3>Custom Dashboards</h3>
+          <p>Executive-ready views that tie metrics to actions.</p>
+          <a href="#">Learn more</a>
+        </div>
+      </div>
+    </div>
+  </section>
+<!-- HOW IT WORKS -->
+<section id="how-it-works" class="section">
+  <div class="container">
+    <h2>How It Works</h2>
+    <p>From raw data to actionable insights in five steps.</p>
+    <div class="cards">
+      <div class="card">
+        <div class="icon"></div>
+        <h3>1. Collect</h3>
+        <p>Sheets, SQL, CSV, or APIs — we pull data from your preferred sources.</p>
+      </div>
+      <div class="card">
+        <div class="icon"></div>
+        <h3>2. Analyze</h3>
+        <p>Data normalization, enrichment, and validation to ensure accuracy.</p>
+      </div>
+      <div class="card">
+        <div class="icon"></div>
+        <h3>3. Detect</h3>
+        <p>AI-powered anomaly detection highlights what’s truly unusual.</p>
+      </div>
+      <div class="card">
+        <div class="icon"></div>
+        <h3>4. Forecast</h3>
+        <p>Short- and medium-term predictions to guide planning and decisions.</p>
+      </div>
+      <div class="card">
+        <div class="icon"></div>
+        <h3>5. Act</h3>
+        <p>Alerts, playbooks, and dashboards tie insights directly to business action.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO EXPERIENCE -->
+<section id="demo" class="section demo-section light-bg">
+  <div class="container">
+    <h2>Experience the Forecast Alpha Demo</h2>
+    <p class="demo-subtitle">
+      Connect to a MySQL database, explore your tables, and surface anomalies plus forecasts in a few guided steps.
+    </p>
+    <div class="demo-grid">
+      <div class="step-card" id="connect-step">
+        <h3>1. Connect your data</h3>
+        <form id="connect-form" class="form-grid">
+          <div class="form-row">
+            <label for="host">Host
+              <input type="text" id="host" name="host" placeholder="db.example.com" required />
+            </label>
+          </div>
+          <div class="form-row">
+            <label for="port">Port
+              <input type="number" id="port" name="port" value="3306" min="1" max="65535" required />
+            </label>
+          </div>
+          <div class="form-row">
+            <label for="username">Username
+              <input type="text" id="username" name="username" required />
+            </label>
+          </div>
+          <div class="form-row">
+            <label for="password">Password
+              <input type="password" id="password" name="password" required />
+            </label>
+          </div>
+          <div class="form-row">
+            <label for="database">Database
+              <input type="text" id="database" name="database" required />
+            </label>
+          </div>
+          <div class="form-row">
+            <label for="driver">Driver
+              <select id="driver" name="driver">
+                <option value="mysql+pymysql">mysql+pymysql</option>
+                <option value="mysql+mysqldb">mysql+mysqldb</option>
+              </select>
+            </label>
+          </div>
+          <div class="form-row">
+            <label for="engine_url">Custom SQLAlchemy URL (optional)
+              <input type="text" id="engine_url" name="engine_url" placeholder="mysql+pymysql://user:pass@host:3306/db" />
+            </label>
+          </div>
+          <div class="form-row">
+            <label for="options">Query Parameters (optional, key=value per line)
+              <textarea id="options" name="options" rows="2" placeholder="charset=utf8mb4"></textarea>
+            </label>
+          </div>
+          <div class="form-row">
+            <label class="checkbox">
+              <input type="checkbox" id="ssl" name="ssl" />
+              <span>Use SSL (if required by your host)</span>
+            </label>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-dark">Validate &amp; Save</button>
+          </div>
+        </form>
+        <p id="connect-status" class="status"></p>
+      </div>
+
+      <div class="step-card disabled" id="table-step">
+        <h3>2. Choose what to analyse</h3>
+        <form id="analysis-setup-form" class="form-grid">
+          <div class="form-row">
+            <label for="table-select">Table
+              <select id="table-select" name="table" required>
+                <option value="">Select a table</option>
+              </select>
+            </label>
+          </div>
+          <div class="form-row">
+            <label for="feature-select">Feature columns
+              <select id="feature-select" name="features" multiple required></select>
+            </label>
+            <small>Select one or more predictors</small>
+          </div>
+          <div class="form-row">
+            <label for="target-select">Target column
+              <select id="target-select" name="target" required>
+                <option value="">Choose a target</option>
+              </select>
+            </label>
+          </div>
+          <div class="form-row">
+            <label for="date-select">Date column (optional)
+              <select id="date-select" name="date">
+                <option value="">None</option>
+              </select>
+            </label>
+          </div>
+          <div class="form-row">
+            <label for="anomaly-method">Anomaly method
+              <select id="anomaly-method" name="anomaly_method">
+                <option value="zscore">Z-Score</option>
+                <option value="isolation_forest">Isolation Forest</option>
+              </select>
+            </label>
+          </div>
+          <div class="form-row">
+            <label for="anomaly-threshold">Anomaly threshold
+              <input type="number" step="0.1" min="0.1" id="anomaly-threshold" name="anomaly_threshold" value="3.0" />
+            </label>
+          </div>
+          <div class="form-row">
+            <label for="forecast-method">Forecast method
+              <select id="forecast-method" name="forecast_method">
+                <option value="linear_regression">Linear Regression</option>
+                <option value="holt_winters">Holt-Winters</option>
+              </select>
+            </label>
+          </div>
+          <div class="form-row">
+            <label for="forecast-periods">Forecast periods
+              <input type="number" id="forecast-periods" name="forecast_periods" value="3" min="1" max="30" />
+            </label>
+          </div>
+          <div class="form-row">
+            <label for="row-limit">Row limit per request
+              <input type="number" id="row-limit" name="limit" value="10000" min="100" />
+            </label>
+          </div>
+          <div class="form-row">
+            <label for="max-rows">Maximum rows to process
+              <input type="number" id="max-rows" name="max_rows" value="50000" min="1000" />
+            </label>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-dark" id="analyze-button">Run analysis</button>
+          </div>
+        </form>
+        <p id="analysis-status" class="status"></p>
+      </div>
+
+      <div class="step-card disabled" id="result-step">
+        <h3>3. Review insights</h3>
+        <div class="result-panels">
+          <div class="result-panel">
+            <h4>Pipeline steps</h4>
+            <ul id="pipeline-steps"></ul>
+          </div>
+          <div class="result-panel">
+            <h4>Anomalies</h4>
+            <div id="anomalies-empty" class="empty-state hidden">No anomalies detected with the current configuration.</div>
+            <table id="anomalies-table" class="result-table hidden">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Value</th>
+                  <th>Severity</th>
+                  <th>Score</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="result-panel">
+            <h4>Forecast</h4>
+            <div id="forecast-empty" class="empty-state hidden">Run the analysis to preview forecasted values.</div>
+            <table id="forecast-table" class="result-table hidden">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Prediction</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INTEGRATIONS -->
+<section id="integrations" class="section light-bg">
+  <div class="container">
+    <h2>Integrations</h2>
+    <p>Forecast Alpha connects seamlessly with your existing ecosystem.</p>
+    <div class="cards">
+      <div class="card">
+        <div class="icon"></div>
+        <h3>Google Sheets</h3>
+        <p>Pull and push data directly between your spreadsheets and Forecast Alpha.</p>
+      </div>
+      <div class="card">
+        <div class="icon"></div>
+        <h3>BigQuery</h3>
+        <p>Native integration for large-scale analytics with zero friction.</p>
+      </div>
+      <div class="card">
+        <div class="icon"></div>
+        <h3>Zapier</h3>
+        <p>Connect Forecast Alpha to 1,000+ apps to automate reporting and alerts.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CUSTOMERS -->
+<section id="testimonials" class="section">
+  <div class="container">
+    <h2>Customers</h2>
+    <p>Trusted by teams who turn data chaos into clarity.</p>
+    <div class="cards">
+      <div class="card">
+        <p>"Forecast Alpha caught a 12% revenue anomaly before our team did."</p>
+        <small>— VP of Analytics, E-commerce Client</small>
+      </div>
+      <div class="card">
+        <p>"We now predict occupancy rates two weeks ahead with over 90% accuracy."</p>
+        <small>— Head of Data, Hospitality Company</small>
+      </div>
+      <div class="card">
+        <p>"Finally, a dashboard that makes anomalies actionable. Highly recommend."</p>
+        <small>— COO, SaaS Platform</small>
+      </div>
+    </div>
+  </div>
+</section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container footer-grid">
+      <div>
+        <div class="brand small">
+          <div class="logo-circle dark"></div>
+          <span>Forecast Alpha</span>
+        </div>
+        <p>Human Insight, Machine Precision.</p>
+      </div>
+      <div>
+        <h4>Product</h4>
+        <ul>
+          <li>Forecasting</li>
+          <li>Anomaly Detection</li>
+          <li>Dashboards</li>
+          <li>Integrations</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <ul>
+          <li>About</li>
+          <li>Blog</li>
+          <li>Contact</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Get in touch</h4>
+        <p>info@forecastalpha.com</p>
+      </div>
+  </div>
+</footer>
+<script src="{{ url_for('static', filename='js/demo.js') }}" defer></script>
+</body>
+</html>
+
+
+
+
+
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Forecast Alpha provides advanced forecasting solutions to transform your data into powerful business insights.">
+    <title>Forecast Alpha</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon" href="images/favicon_rebrand.png" type="image/png">
+</head>
+<body>
+    <header>
+        <img src="images/Forecastalpha_rebrand_blue.png" alt="Logo">
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="expertise.html">Expertise</a></li>
+                <li><a href="packages.html">Packages</a></li>
+                <li><a href="free_tools.html">Free Tools</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="parallax-section" style="background-image: url('images/hero-bg.jpeg');">
+        <div class="parallax-content">
+            <h1><span class="welcome-text">Forecast Alpha: Human Insight, Machine Precision</span></h1>
+            <p>Transform raw data into clarity, capture hidden trends, and detect fraud—so you make faster, smarter decisions.</p>
+            <a href="about.html" class="cta-button">Get a Free Data Audit</a>
+            <a href="packages.html" class="cta-button">Explore Services</a>
+        </div>
+    </div>
+
+    <div class="scrolling-band">
+        <h2>Our Core Expertise Pillars</h2>
+        <p>Simple, Insightful, Impactful Solutions</p>
+        <div class="slider-container">
+            <button class="slider-button prev">‹</button>
+            <ul class="expertise-list">
+                <li>
+                    <h3><a href="services.html#data-audit">Data Audit & Insight Scan</a></h3>
+                    <p>We assess your data health, identify quick wins, and give you a short report – perfect for businesses with messy spreadsheets.</p>
+                </li>
+                <li>
+                    <h3><a href="services.html#fraud">Fraud & Anomaly Detection</a></h3>
+                    <p>Python-powered detection systems with dashboards and weekly reports—catch financial leaks before they cost you.</p>
+                </li>
+                <li>
+                    <h3><a href="services.html#forecast">Forecast Modeling (FMaaS)</a></h3>
+                    <p>We build ML-based forecasts delivered via dashboards, Excel, or PDF to predict sales, costs, or customer churn.</p>
+                </li>
+                <li>
+                    <h3><a href="services.html#dashboard">Custom BI Dashboards</a></h3>
+                    <p>Tailored dashboards for KPIs, ops insights, or financial metrics using Power BI or Python Dash.</p>
+                </li>
+                <li>
+                    <h3><a href="packages.html#bundle">Business Performance Pack</a></h3>
+                    <p>Bundle our Audit, Forecasting, and Dashboard services into one powerful data product with a single price.</p>
+                </li>
+            </ul>
+            <button class="slider-button next">›</button>
+        </div>
+    </div>
+
+    
+
+    <footer>
+        <p>&copy; 2025 Forecast Alpha. All rights reserved.</p>
+    </footer>
+
+    <script src="js/scripts.js"></script>
+</body>
+</html> -->

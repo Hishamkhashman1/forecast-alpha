@@ -45,7 +45,17 @@ The `/api` blueprint in `backend/api/routes.py` now wires the end-to-end workflo
 
 - `POST /api/connect` — validates credentials using SQLAlchemy and returns a connection token stored in-memory.
 - `GET /api/tables` — reflects the connected database to list tables and columns.
-- `POST /api/analyze` — pulls data into pandas, runs the cleaning pipeline, detects anomalies, and forecasts future values.
+- `POST /api/analyze` — pulls data into pandas, runs the cleaning pipeline, detects anomalies, and forecasts future values. Request payloads can specify `anomaly_method` (`zscore` or `isolation_forest`), `forecast_method` (`linear_regression` or `holt_winters`), thresholds, forecast periods, and `max_rows` safeguards for large datasets.
+
+### Frontend demo
+
+The landing page (`backend/templates/index.html`) adopts the refreshed marketing design and embeds a three-step demo:
+
+- Step 1 collects database credentials and tests connectivity.
+- Step 2 lets the user pick tables/columns and tune analysis parameters.
+- Step 3 renders pipeline steps, anomalies, and forecast tables powered by the `/api` responses.
+
+All styling lives under `backend/static/css/style.css`, and the interaction logic sits in `backend/static/js/demo.js`.
 
 ### Next Up
 
