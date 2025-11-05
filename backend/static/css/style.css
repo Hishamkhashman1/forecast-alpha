@@ -15,7 +15,9 @@ html, body {
 }
 
 body.demo-page {
-  background-color: #f8fafc;
+  background: radial-gradient(circle at top, rgba(59, 130, 246, 0.08), transparent 50%),
+    radial-gradient(circle at 20% 80%, rgba(14, 165, 233, 0.06), transparent 45%),
+    #f8fafc;
 }
 
 .demo-main {
@@ -83,6 +85,11 @@ body.demo-page {
   display: none !important;
 }
 
+.portal-container {
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
 .portal-header {
   display: flex;
   justify-content: space-between;
@@ -93,6 +100,23 @@ body.demo-page {
 .portal-actions {
   display: flex;
   gap: 0.75rem;
+}
+
+.portal-body {
+  display: grid;
+  grid-template-columns: minmax(320px, 370px) 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.analysis-stack {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.insight-stack {
+  display: grid;
+  gap: 1.5rem;
 }
 
 /* === GLOBAL CONTAINER === */
@@ -186,6 +210,14 @@ button {
 
 .btn-dark:hover {
   background: #1f2937;
+}
+
+.btn-dark.watching {
+  background: #047857;
+}
+
+.btn-dark.watching:hover {
+  background: #065f46;
 }
 
 /* === HERO SECTION === */
@@ -557,6 +589,11 @@ button[disabled] {
   background: #f9fafb;
 }
 
+.pipeline-panel {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
 .result-panel h4 {
   font-size: 1rem;
   font-weight: 600;
@@ -617,4 +654,185 @@ button[disabled] {
   .result-panels {
     grid-template-columns: repeat(3, 1fr);
   }
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.kpi-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 1.1rem 1.3rem;
+  box-shadow: 0 10px 25px -15px rgba(15, 23, 42, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.kpi-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+}
+
+.kpi-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.chart-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 1.2rem 1.4rem;
+  box-shadow: 0 12px 30px -20px rgba(15, 23, 42, 0.35);
+}
+
+.live-card {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.12), rgba(56, 189, 248, 0.07));
+  border: 1px solid rgba(14, 165, 233, 0.15);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.chart-header h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.chart-header small {
+  display: block;
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
+.live-indicator {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #059669;
+  background: rgba(16, 185, 129, 0.15);
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.live-indicator.offline {
+  color: #f97316;
+  background: rgba(249, 115, 22, 0.15);
+}
+
+.chart-card canvas {
+  width: 100%;
+  min-height: 280px;
+  display: block;
+}
+
+.alert-feed-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.75rem;
+}
+
+.alert-feed-header small {
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
+.alert-list {
+  list-style: none;
+  display: grid;
+  gap: 0.7rem;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.alert-item {
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: rgba(254, 226, 226, 0.55);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.alert-item.medium {
+  border-color: rgba(245, 158, 11, 0.3);
+  background: rgba(254, 243, 199, 0.6);
+}
+
+.alert-item span {
+  font-weight: 600;
+  color: #991b1b;
+}
+
+.alert-item.medium span {
+  color: #92400e;
+}
+
+@media (min-width: 1200px) {
+  .insights-grid {
+    grid-template-columns: 280px repeat(2, 1fr);
+  }
+
+  .insights-grid > .pipeline-panel {
+    grid-row: span 2;
+  }
+}
+
+@media (max-width: 1200px) {
+  .portal-body {
+    grid-template-columns: 1fr;
+  }
+}
+.cta-card {
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(14, 165, 233, 0.12));
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  border-radius: 18px;
+  padding: 1.6rem 1.8rem;
+  display: grid;
+  gap: 0.9rem;
+  box-shadow: 0 22px 45px -25px rgba(79, 70, 229, 0.35);
+}
+
+.cta-card h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e1b4b;
+}
+
+.cta-card p {
+  color: #312e81;
+  font-size: 0.95rem;
+  max-width: 520px;
+}
+
+.cta-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }

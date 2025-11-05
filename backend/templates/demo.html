@@ -63,7 +63,7 @@
     </section>
 
     <section class="section demo-section light-bg hidden" id="portal-section">
-      <div class="container">
+      <div class="container portal-container">
         <header class="portal-header">
           <div>
             <h1>Demo Workspace</h1>
@@ -73,8 +73,9 @@
             <button class="btn-outline" id="reset-demo">Restart demo</button>
           </div>
         </header>
-        <div class="demo-grid">
-          <div class="step-card" id="connect-step">
+        <div class="portal-body">
+          <div class="analysis-stack">
+            <div class="step-card" id="connect-step">
             <h3>1. Connect your data</h3>
             <form id="connect-form" class="form-grid">
               <div class="form-row">
@@ -206,40 +207,112 @@
             <p id="analysis-status" class="status"></p>
           </div>
 
-          <div class="step-card disabled" id="result-step">
-            <h3>3. Review insights</h3>
-            <div class="result-panels">
-              <div class="result-panel">
-                <h4>Pipeline steps</h4>
-                <ul id="pipeline-steps"></ul>
+          </div>
+          <div class="insight-stack">
+            <div class="cta-card">
+              <div>
+                <h3>Stay on top of this dataset</h3>
+                <p>Turn on monitoring so we can ping you whenever anomalies spike or forecasts drift.</p>
               </div>
-              <div class="result-panel">
-                <h4>Anomalies</h4>
-                <div id="anomalies-empty" class="empty-state hidden">No anomalies detected with the current configuration.</div>
-                <table id="anomalies-table" class="result-table hidden">
-                  <thead>
-                    <tr>
-                      <th>Timestamp</th>
-                      <th>Value</th>
-                      <th>Severity</th>
-                      <th>Score</th>
-                    </tr>
-                  </thead>
-                  <tbody></tbody>
-                </table>
+              <div class="cta-actions">
+                <button class="btn-dark" id="watch-button">Watch this dataset</button>
+                <button class="btn-outline" id="notify-button" disabled>Notify me of anomalies</button>
               </div>
-              <div class="result-panel">
-                <h4>Forecast</h4>
-                <div id="forecast-empty" class="empty-state hidden">Run the analysis to preview forecasted values.</div>
-                <table id="forecast-table" class="result-table hidden">
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Prediction</th>
-                    </tr>
-                  </thead>
-                  <tbody></tbody>
-                </table>
+              <p id="watch-status" class="status"></p>
+            </div>
+
+            <div class="chart-card live-card">
+              <div class="chart-header">
+                <div>
+                  <h4>Live heartbeat</h4>
+                  <small>Streaming metric input in real time</small>
+                </div>
+                <span class="live-indicator" id="live-indicator">● Offline</span>
+              </div>
+              <canvas id="live-chart" aria-label="Live metric chart" role="img"></canvas>
+            </div>
+
+            <div class="result-panel" id="alert-feed">
+              <div class="alert-feed-header">
+                <h4>Live alerts</h4>
+                <small id="alert-hint">Awaiting anomalies…</small>
+              </div>
+              <ul id="alert-list" class="alert-list"></ul>
+            </div>
+
+            <div class="step-card disabled" id="result-step">
+              <h3>3. Review insights</h3>
+
+              <div class="kpi-grid">
+                <div class="kpi-card">
+                  <span class="kpi-label">Rows analysed</span>
+                  <span class="kpi-value" id="kpi-rows">-</span>
+                </div>
+                <div class="kpi-card">
+                  <span class="kpi-label">Anomalies detected</span>
+                  <span class="kpi-value" id="kpi-anomalies">-</span>
+                </div>
+                <div class="kpi-card">
+                  <span class="kpi-label">Forecast horizon</span>
+                  <span class="kpi-value" id="kpi-horizon">-</span>
+                </div>
+              </div>
+
+              <div class="insights-grid">
+                <div class="result-panel pipeline-panel">
+                  <h4>Pipeline steps</h4>
+                  <ul id="pipeline-steps"></ul>
+                </div>
+
+                <div class="chart-card">
+                  <div class="chart-header">
+                    <div>
+                      <h4>Anomaly timeline</h4>
+                      <small>Recent history with anomalies highlighted</small>
+                    </div>
+                  </div>
+                  <canvas id="anomaly-chart" aria-label="Anomaly timeline chart" role="img"></canvas>
+                </div>
+
+                <div class="chart-card">
+                  <div class="chart-header">
+                    <div>
+                      <h4>Forecast outlook</h4>
+                      <small>Projection using the selected forecast method</small>
+                    </div>
+                  </div>
+                  <canvas id="forecast-chart" aria-label="Forecast chart" role="img"></canvas>
+                </div>
+
+                <div class="result-panel">
+                  <h4>Anomalies</h4>
+                  <div id="anomalies-empty" class="empty-state hidden">No anomalies detected with the current configuration.</div>
+                  <table id="anomalies-table" class="result-table hidden">
+                    <thead>
+                      <tr>
+                        <th>Timestamp</th>
+                        <th>Value</th>
+                        <th>Severity</th>
+                        <th>Score</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+
+                <div class="result-panel">
+                  <h4>Forecast values</h4>
+                  <div id="forecast-empty" class="empty-state hidden">Run the analysis to preview forecasted values.</div>
+                  <table id="forecast-table" class="result-table hidden">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Prediction</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>

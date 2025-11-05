@@ -2,7 +2,13 @@
 
 from __future__ import annotations
 
-from flask import current_app, jsonify, request
+import json
+import math
+import random
+import time
+
+import pandas as pd
+from flask import Response, current_app, jsonify, request, stream_with_context
 from pydantic import ValidationError
 
 from backend.models.requests import AnalysisRequest, ConnectionRequest
@@ -123,10 +129,80 @@ def analyze_data():
     )
     forecast_points = analytics.forecast(cleaned_frame, data.target_column, data.date_column)
 
+    if data.date_column and data.date_column in cleaned_frame.columns:
+        historical_frame = cleaned_frame[[data.date_column, data.target_column]].copy()
+        historical_frame[data.date_column] = pd.to_datetime(historical_frame[data.date_column], errors="coerce")
+        historical_frame = historical_frame.dropna(subset=[data.date_column])
+        historical_frame = historical_frame.sort_values(by=data.date_column)
+        historical_series = [
+            {
+                "date": row[data.date_column].isoformat(),
+                "value": float(row[data.target_column]),
+            }
+            for _, row in historical_frame.iterrows()
+        ]
+    else:
+        historical_series = [
+            {
+                "date": str(index),
+                "value": float(value),
+            }
+            for index, value in cleaned_frame[data.target_column].items()
+        ]
+
     response_model = AnalysisResponse(
         anomalies=anomalies,
         forecast=forecast_points,
+        historical=historical_series,
+        metrics={
+            "rows_processed": int(len(cleaned_frame)),
+            "anomalies_detected": len(anomalies),
+            "forecast_horizon": len(forecast_points),
+            "anomaly_method": data.anomaly_method,
+            "forecast_method": data.forecast_method,
+            "target_column": data.target_column,
+        },
         pipeline_steps=pipeline.summary(),
     )
 
     return jsonify(status="success", **response_model.model_dump()), 200
+
+
+@api_bp.route("/stream/live", methods=["GET"])
+def stream_live_metric():
+    """Server-sent events endpoint that streams simulated metric data."""
+
+    def event_stream():
+        amplitude = 12
+        baseline = 120
+        t = random.randint(0, 500)
+        while True:
+            seasonal = amplitude * math.sin(t / 12)
+            noise = random.gauss(0, 2.5)
+            value = baseline + seasonal + noise
+            is_anomaly = False
+            severity = "normal"
+            if random.random() < 0.07:
+                spike = random.choice([random.uniform(18, 35), random.uniform(-30, -15)])
+                value += spike
+                is_anomaly = True
+                severity = "high" if spike > 0 else "medium"
+            payload = {
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime()),
+                "value": round(value, 3),
+                "baseline": baseline,
+                "seasonal": round(seasonal, 3),
+                "is_anomaly": is_anomaly,
+                "severity": severity,
+            }
+            yield f"data: {json.dumps(payload)}\n\n"
+            time.sleep(1)
+            t += 1
+
+    headers = {
+        "Cache-Control": "no-cache",
+        "Content-Type": "text/event-stream",
+        "Connection": "keep-alive",
+        "X-Accel-Buffering": "no",
+    }
+    return Response(stream_with_context(event_stream()), headers=headers)

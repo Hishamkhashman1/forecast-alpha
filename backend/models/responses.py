@@ -24,9 +24,29 @@ class ForecastRecord(BaseModel):
     prediction: float
 
 
+class HistoricalRecord(BaseModel):
+    """Represents a historical data point for charting."""
+
+    date: str
+    value: float
+
+
+class Metrics(BaseModel):
+    """Key performance indicators returned with the analysis."""
+
+    rows_processed: int
+    anomalies_detected: int
+    forecast_horizon: int
+    anomaly_method: str
+    forecast_method: str
+    target_column: str
+
+
 class AnalysisResponse(BaseModel):
     """Envelope for analysis results."""
 
     anomalies: List[AnomalyRecord]
     forecast: List[ForecastRecord]
+    historical: List[HistoricalRecord]
+    metrics: Metrics
     pipeline_steps: List[str] = Field(default_factory=list)

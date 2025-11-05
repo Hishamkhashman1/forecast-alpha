@@ -2,21 +2,12 @@ const state = {
   user: null,
   connectionId: null,
   tables: [],
+  watchlist: false,
 };
 
-function parseOptions(raw) {
-  if (!raw) return undefined;
-  const options = {};
-  const lines = raw.split(/\r?\n/);
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-    const [key, ...rest] = trimmed.split("=");
-    if (!key || rest.length === 0) continue;
-    options[key.trim()] = rest.join("=").trim();
-  }
-  return Object.keys(options).length ? options : undefined;
-}
+const liveBuffer = [];
+const liveAlerts = [];
+let liveSource = null;
 
 function setStatus(element, message, variant = "info") {
   if (!element) return;
@@ -32,6 +23,31 @@ function setStatus(element, message, variant = "info") {
 function toggleStep(stepElement, enabled) {
   if (!stepElement) return;
   stepElement.classList.toggle("disabled", !enabled);
+}
+
+function normaliseDateString(value) {
+  if (!value) return "";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return String(value);
+  }
+  return parsed.toISOString();
+}
+
+function parseOptions(raw) {
+  if (!raw) return undefined;
+  const options = {};
+  raw
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .forEach((line) => {
+      const [key, ...rest] = line.split("=");
+      if (key && rest.length > 0) {
+        options[key.trim()] = rest.join("=").trim();
+      }
+    });
+  return Object.keys(options).length ? options : undefined;
 }
 
 function populateSelect(selectElement, values, { emptyLabel = "Select" } = {}) {
@@ -65,13 +81,8 @@ function populateMultiSelect(selectElement, values) {
 function renderPipelineSteps(listElement, steps) {
   if (!listElement) return;
   listElement.innerHTML = "";
-  if (!steps || steps.length === 0) {
-    const li = document.createElement("li");
-    li.textContent = "No cleaning steps recorded.";
-    listElement.appendChild(li);
-    return;
-  }
-  steps.forEach((step) => {
+  const records = steps && steps.length ? steps : ["No cleaning steps recorded."];
+  records.forEach((step) => {
     const li = document.createElement("li");
     li.textContent = step;
     listElement.appendChild(li);
@@ -143,6 +154,259 @@ function renderForecast(tableElement, emptyElement, forecast) {
   tableElement.classList.remove("hidden");
 }
 
+function updateKpis(metrics, { kpiRows, kpiAnomalies, kpiHorizon }) {
+  if (!kpiRows || !kpiAnomalies || !kpiHorizon) return;
+  if (!metrics) {
+    kpiRows.textContent = "-";
+    kpiAnomalies.textContent = "-";
+    kpiHorizon.textContent = "-";
+    return;
+  }
+  kpiRows.textContent = metrics.rows_processed?.toLocaleString() ?? "-";
+  kpiAnomalies.textContent = metrics.anomalies_detected?.toLocaleString() ?? "-";
+  const horizon = metrics.forecast_horizon ?? 0;
+  kpiHorizon.textContent = horizon ? `${horizon} step${horizon > 1 ? "s" : ""}` : "-";
+}
+
+function setLiveIndicator(element, online) {
+  if (!element) return;
+  element.textContent = online ? "● Live" : "● Offline";
+  element.classList.toggle("offline", !online);
+}
+
+function updateAlertFeed(payload, { alertList, alertHint }) {
+  if (!alertList || !alertHint) return;
+  if (!payload) {
+    liveAlerts.length = 0;
+    alertList.innerHTML = "";
+    alertHint.textContent = "Awaiting anomalies…";
+    return;
+  }
+  alertHint.textContent = "Latest anomaly events";
+  liveAlerts.unshift(payload);
+  if (liveAlerts.length > 12) {
+    liveAlerts.pop();
+  }
+  alertList.innerHTML = "";
+  liveAlerts.forEach((item) => {
+    const li = document.createElement("li");
+    li.className = `alert-item ${item.severity || "medium"}`;
+    const severity = document.createElement("span");
+    severity.textContent = `${item.severity || "medium"} anomaly`;
+    const timestamp = document.createElement("div");
+    timestamp.textContent = item.timestamp;
+    const value = document.createElement("div");
+    value.textContent = `Value: ${Number(item.value).toFixed(2)}`;
+    li.append(severity, timestamp, value);
+    alertList.appendChild(li);
+  });
+}
+
+function prepareCanvas(canvas) {
+  const ctx = canvas.getContext("2d");
+  const ratio = window.devicePixelRatio || 1;
+  const width = canvas.clientWidth * ratio;
+  const height = (canvas.clientHeight || 280) * ratio;
+  canvas.width = width;
+  canvas.height = height;
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  return {
+    ctx,
+    width: canvas.clientWidth,
+    height: canvas.clientHeight || 280,
+  };
+}
+
+function drawAxes(ctx, width, height) {
+  ctx.save();
+  ctx.strokeStyle = "#e2e8f0";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(40, height - 30);
+  ctx.lineTo(width - 15, height - 30);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(40, height - 30);
+  ctx.lineTo(40, 20);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function toChartPoints(series, width, height) {
+  if (!series || series.length === 0) return [];
+  const values = series.map((point) => point.value);
+  const minValue = Math.min(...values);
+  const maxValue = Math.max(...values);
+  const range = maxValue - minValue || 1;
+  const plotWidth = width - 60;
+  const plotHeight = height - 60;
+  return series.map((point, index) => {
+    const x = 40 + (plotWidth * index) / Math.max(series.length - 1, 1);
+    const normalized = (point.value - minValue) / range;
+    const y = height - 30 - normalized * plotHeight;
+    return { x, y };
+  });
+}
+
+function drawLine(ctx, points, color, options = {}) {
+  if (!points.length) return;
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = options.lineWidth || 2;
+  ctx.setLineDash(options.dash || []);
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length; i += 1) {
+    ctx.lineTo(points[i].x, points[i].y);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function drawPoints(ctx, points, options = {}) {
+  if (!points.length) return;
+  ctx.save();
+  ctx.fillStyle = options.fillStyle || "#ef4444";
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = options.lineWidth || 2;
+  points.forEach((point) => {
+    ctx.beginPath();
+    ctx.arc(point.x, point.y, options.radius || 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  });
+  ctx.restore();
+}
+
+function drawAnomalyTimeline(canvas, historical, anomalies) {
+  const recentHistorical = historical.slice(-60);
+  const { ctx, width, height } = prepareCanvas(canvas);
+  drawAxes(ctx, width, height);
+  if (!recentHistorical.length) {
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "13px Inter, sans-serif";
+    ctx.fillText("Run an analysis to see anomaly timeline.", 50, height / 2);
+    return;
+  }
+  const normalised = recentHistorical.map((entry) => ({
+    date: normaliseDateString(entry.date),
+    value: entry.value,
+  }));
+  const points = toChartPoints(normalised, width, height);
+  drawLine(ctx, points, "#6366f1");
+  if (anomalies && anomalies.length) {
+    const map = new Map(anomalies.map((item) => [normaliseDateString(item.timestamp), item]));
+    const anomalyPoints = normalised
+      .map((entry, idx) => {
+        const hit = map.get(entry.date);
+        if (!hit) return null;
+        return {
+          x: points[idx].x,
+          y: points[idx].y,
+          severity: hit.severity || "medium",
+        };
+      })
+      .filter(Boolean);
+    anomalyPoints.forEach((point) => {
+      ctx.beginPath();
+      ctx.fillStyle = point.severity === "high" ? "rgba(239, 68, 68, 0.9)" : "rgba(245, 158, 11, 0.9)";
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2;
+      ctx.arc(point.x, point.y, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    });
+  }
+}
+
+function drawForecastChart(canvas, historical, forecast) {
+  const tail = historical.slice(-30);
+  const { ctx, width, height } = prepareCanvas(canvas);
+  drawAxes(ctx, width, height);
+  if (!tail.length && !forecast.length) {
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "13px Inter, sans-serif";
+    ctx.fillText("Run an analysis to see forecasts.", 50, height / 2);
+    return;
+  }
+  const historicalPoints = toChartPoints(
+    tail.map((entry) => ({ date: normaliseDateString(entry.date), value: entry.value })),
+    width,
+    height
+  );
+  drawLine(ctx, historicalPoints, "#0ea5e9");
+  if (forecast.length) {
+    const forecastSeries = tail.slice(-1).map((entry) => ({
+      date: normaliseDateString(entry.date),
+      value: entry.value,
+    }));
+    forecast.forEach((point) => {
+      forecastSeries.push({ date: normaliseDateString(point.date), value: point.prediction });
+    });
+    const forecastPoints = toChartPoints(forecastSeries, width, height);
+    drawLine(ctx, forecastPoints, "#22c55e", { dash: [6, 4] });
+    const futurePoints = forecastPoints.slice(1);
+    drawPoints(ctx, futurePoints, { radius: 4, fillStyle: "#22c55e" });
+  }
+}
+
+function drawLiveChart(series) {
+  const canvas = document.getElementById("live-chart");
+  if (!canvas) return;
+  const { ctx, width, height } = prepareCanvas(canvas);
+  drawAxes(ctx, width, height);
+  if (!series.length) {
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "13px Inter, sans-serif";
+    ctx.fillText("Waiting for live data…", 50, height / 2);
+    return;
+  }
+  const normalised = series.map((entry) => ({
+    date: normaliseDateString(entry.date),
+    value: entry.value,
+  }));
+  const points = toChartPoints(normalised, width, height);
+  drawLine(ctx, points, "#2563eb");
+  const lastPoint = points[points.length - 1];
+  drawPoints(ctx, [lastPoint], { radius: 4, fillStyle: "#2563eb" });
+}
+
+function renderCharts(historical, anomalies, forecast) {
+  drawAnomalyTimeline(document.getElementById("anomaly-chart"), historical, anomalies);
+  drawForecastChart(document.getElementById("forecast-chart"), historical, forecast);
+}
+
+function ensureLiveStream({ liveIndicator, alertList, alertHint }) {
+  if (liveSource) return;
+  liveSource = new EventSource("/api/stream/live");
+  liveSource.onopen = () => setLiveIndicator(liveIndicator, true);
+  liveSource.onerror = () => setLiveIndicator(liveIndicator, false);
+  liveSource.onmessage = (event) => {
+    try {
+      const payload = JSON.parse(event.data);
+      liveBuffer.push({ date: payload.timestamp, value: payload.value });
+      if (liveBuffer.length > 180) {
+        liveBuffer.shift();
+      }
+      drawLiveChart(liveBuffer);
+      if (payload.is_anomaly) {
+        updateAlertFeed(payload, { alertList, alertHint });
+        if (state.watchlist) {
+          setStatus(
+            document.getElementById("watch-status"),
+            `Anomaly detected at ${payload.timestamp}. Alert queued for delivery.`,
+            "success"
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Unable to parse stream payload", error);
+    }
+  };
+}
+
 async function fetchJson(url, options) {
   const response = await fetch(url, options);
   const data = await response.json();
@@ -163,6 +427,12 @@ function hookForms() {
   const authStatus = document.getElementById("auth-status");
   const showSignup = document.getElementById("show-signup");
   const showSignin = document.getElementById("show-signin");
+  const watchButton = document.getElementById("watch-button");
+  const notifyButton = document.getElementById("notify-button");
+  const watchStatus = document.getElementById("watch-status");
+  const liveIndicator = document.getElementById("live-indicator");
+  const alertHint = document.getElementById("alert-hint");
+  const alertList = document.getElementById("alert-list");
 
   const connectForm = document.getElementById("connect-form");
   const connectStatus = document.getElementById("connect-status");
@@ -181,17 +451,14 @@ function hookForms() {
   const forecastEmpty = document.getElementById("forecast-empty");
   const pipelineList = document.getElementById("pipeline-steps");
   const analyzeButton = document.getElementById("analyze-button");
+  const kpiRows = document.getElementById("kpi-rows");
+  const kpiAnomalies = document.getElementById("kpi-anomalies");
+  const kpiHorizon = document.getElementById("kpi-horizon");
 
   const toggleAuthMode = (mode) => {
     const isSignup = mode === "signup";
     if (authForm) {
       authForm.dataset.mode = mode;
-    }
-    if (showSignup && showSignin) {
-      showSignup.setAttribute("aria-pressed", isSignup ? "true" : "false");
-      showSignin.setAttribute("aria-pressed", isSignup ? "false" : "true");
-    }
-    if (authForm) {
       authForm.querySelectorAll("[data-signup-only]").forEach((el) => {
         el.classList.toggle("hidden", !isSignup);
         const input = el.querySelector("input");
@@ -210,6 +477,10 @@ function hookForms() {
       if (submit) {
         submit.textContent = isSignup ? "Create account" : "Sign in";
       }
+    }
+    if (showSignup && showSignin) {
+      showSignup.setAttribute("aria-pressed", isSignup ? "true" : "false");
+      showSignin.setAttribute("aria-pressed", isSignup ? "false" : "true");
     }
   };
 
@@ -232,12 +503,10 @@ function hookForms() {
         setStatus(authStatus, "Enter a valid email address.", "error");
         return;
       }
-
       if (!password || password.length < 6) {
         setStatus(authStatus, "Password must be at least 6 characters.", "error");
         return;
       }
-
       if (mode === "signup") {
         const consent = document.getElementById("auth-consent");
         if (consent && !consent.checked) {
@@ -263,6 +532,7 @@ function hookForms() {
         authSection.classList.add("hidden");
         portalSection.classList.remove("hidden");
       }
+      ensureLiveStream({ liveIndicator, alertList, alertHint });
       toggleStep(connectStep, true);
       toggleStep(tableStep, false);
       toggleStep(resultStep, false);
@@ -275,6 +545,7 @@ function hookForms() {
       state.user = null;
       state.connectionId = null;
       state.tables = [];
+      state.watchlist = false;
       if (authForm) {
         authForm.reset();
         toggleAuthMode("signup");
@@ -292,6 +563,42 @@ function hookForms() {
       renderPipelineSteps(pipelineList, []);
       renderAnomalies(anomaliesTable, anomaliesEmpty, []);
       renderForecast(forecastTable, forecastEmpty, []);
+      updateKpis(null, { kpiRows, kpiAnomalies, kpiHorizon });
+      updateAlertFeed(null, { alertList, alertHint });
+      if (watchButton) {
+        watchButton.textContent = "Watch this dataset";
+        watchButton.classList.remove("watching");
+      }
+      if (notifyButton) {
+        notifyButton.disabled = true;
+      }
+      setStatus(watchStatus, "");
+    });
+  }
+
+  if (watchButton && notifyButton) {
+    watchButton.addEventListener("click", () => {
+      if (!state.connectionId) {
+        setStatus(watchStatus, "Connect and analyse data first.", "error");
+        return;
+      }
+      state.watchlist = !state.watchlist;
+      if (state.watchlist) {
+        watchButton.textContent = "Watching";
+        watchButton.classList.add("watching");
+        notifyButton.disabled = false;
+        setStatus(watchStatus, "Monitoring enabled. You’ll receive anomaly alerts.", "success");
+      } else {
+        watchButton.textContent = "Watch this dataset";
+        watchButton.classList.remove("watching");
+        notifyButton.disabled = true;
+        setStatus(watchStatus, "Alerts paused for this dataset.");
+      }
+    });
+
+    notifyButton.addEventListener("click", () => {
+      if (notifyButton.disabled) return;
+      setStatus(watchStatus, "Notification preferences saved for this session.", "success");
     });
   }
 
@@ -303,7 +610,6 @@ function hookForms() {
         toggleStep(connectStep, false);
         return;
       }
-
       setStatus(connectStatus, "Validating credentials…");
 
       const formData = new FormData(connectForm);
@@ -327,20 +633,15 @@ function hookForms() {
         });
         state.connectionId = data.connection_id;
         setStatus(connectStatus, "Connection saved. Tables loading…", "success");
-        await loadTables(
-          tableSelect,
-          featureSelect,
-          targetSelect,
-          dateSelect,
-          tableStep,
-          analysisStatus
-        );
+        await loadTables(tableSelect, featureSelect, targetSelect, dateSelect, tableStep, analysisStatus);
       } catch (error) {
         console.error(error);
         setStatus(connectStatus, error.message || "Unable to connect", "error");
         state.connectionId = null;
         toggleStep(tableStep, false);
         toggleStep(resultStep, false);
+        updateKpis(null, { kpiRows, kpiAnomalies, kpiHorizon });
+        renderCharts([], [], []);
       }
     });
   }
@@ -404,6 +705,8 @@ function hookForms() {
         renderPipelineSteps(pipelineList, data.pipeline_steps);
         renderAnomalies(anomaliesTable, anomaliesEmpty, data.anomalies);
         renderForecast(forecastTable, forecastEmpty, data.forecast);
+        updateKpis(data.metrics, { kpiRows, kpiAnomalies, kpiHorizon });
+        renderCharts(data.historical, data.anomalies, data.forecast);
         toggleStep(resultStep, true);
         setStatus(analysisStatus, "Analysis complete.", "success");
       } catch (error) {
@@ -425,11 +728,7 @@ async function loadTables(tableSelect, featureSelect, targetSelect, dateSelect, 
     const data = await fetchJson(`/api/tables?connection_id=${encodeURIComponent(state.connectionId)}`);
     state.tables = data.tables || [];
     if (state.tables.length === 0) {
-      setStatus(
-        document.getElementById("connect-status"),
-        "Connection succeeded but no tables were returned.",
-        "error"
-      );
+      setStatus(document.getElementById("connect-status"), "Connection succeeded but no tables were returned.", "error");
       toggleStep(tableStep, false);
       toggleStep(document.getElementById("result-step"), false);
       return;
@@ -442,11 +741,7 @@ async function loadTables(tableSelect, featureSelect, targetSelect, dateSelect, 
     setStatus(analysisStatus, "Choose a table and configure your analysis.");
   } catch (error) {
     console.error(error);
-    setStatus(
-      document.getElementById("connect-status"),
-      error.message || "Unable to fetch tables.",
-      "error"
-    );
+    setStatus(document.getElementById("connect-status"), error.message || "Unable to fetch tables.", "error");
     toggleStep(tableStep, false);
     toggleStep(document.getElementById("result-step"), false);
   }
@@ -455,5 +750,12 @@ async function loadTables(tableSelect, featureSelect, targetSelect, dateSelect, 
 (function init() {
   document.addEventListener("DOMContentLoaded", () => {
     hookForms();
+    // kick off live stream for demo visitors who skip auth toggle
+    const liveIndicator = document.getElementById("live-indicator");
+    const alertHint = document.getElementById("alert-hint");
+    const alertList = document.getElementById("alert-list");
+    if (liveIndicator && alertHint && alertList) {
+      ensureLiveStream({ liveIndicator, alertList, alertHint });
+    }
   });
 })();

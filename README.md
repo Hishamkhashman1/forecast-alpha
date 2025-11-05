@@ -51,7 +51,13 @@ The `/api` blueprint in `backend/api/routes.py` now wires the end-to-end workflo
 
 - The landing page (`backend/templates/index.html`) keeps the marketing content and links out to a dedicated demo window (`/demo`).
 - `backend/templates/demo.html` walks users through registration → connection → configuration → insight review in a guided four-step flow, opened in a new tab when visitors click “Launch Demo”.
-- Styling lives in `backend/static/css/style.css`, interaction logic in `backend/static/js/demo.js` (loaded only on the demo page). The introduction form simply captures details in-memory to gate the rest of the demo—no data is persisted.
+- Styling lives in `backend/static/css/style.css`, interaction logic in `backend/static/js/demo.js` (loaded only on the demo page). The introduction form simply captures details in-memory to gate the rest of the demo—no data is persisted. Charts (including a live heartbeat stream) render via custom Canvas drawing utilities fed by a server-sent event stream at `/api/stream/live`.
+
+### Streaming architecture (WIP)
+
+- `services/gateway/` hosts a FastAPI microservice that accepts normalized events (`POST /ingest`) and broadcasts them to WebSocket subscribers (`/ws/{token}`). For now an in-memory registry seeds a demo token; in production this will be backed by Redis/Kafka.
+- `connectors/` defines the base SDK that data-source plugins will implement. Each connector yields `MetricSample` objects and the helper `run()` posts them to the gateway.
+- This is the first step toward the plug-and-play command-center vision: connectors emit events → gateway queues and fans them out → processing workers (coming next) will score anomalies and issue alerts.
 
 ### Next Up
 
