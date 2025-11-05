@@ -10,3 +10,4 @@ pyod>=2.0.0,<3.0.0
 statsmodels>=0.14.0,<0.15.0
 pydantic>=2.4.0,<3.0.0
 pytest>=7.4.0,<8.0.0
+cryptography>=41.0.0,<43.0.0

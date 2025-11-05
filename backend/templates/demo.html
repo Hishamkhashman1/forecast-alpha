@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forecast Alpha Demo</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body class="demo-page">
+  <header class="navbar">
+    <div class="container nav-inner">
+      <div class="brand">
+        <div class="logo-circle"></div>
+        <span>Forecast Alpha Demo</span>
+      </div>
+      <div class="nav-actions">
+        <a class="btn-outline" href="{{ url_for('index') }}" target="_blank" rel="noopener">Marketing Site</a>
+        <a class="btn-dark" href="{{ url_for('index') }}">Back to Home</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="section demo-section light-bg">
+      <div class="container">
+        <h1>Interactive Demo</h1>
+        <p class="demo-subtitle">
+          Validate your connection, select the data you want to inspect, and see anomalies plus forecasts generated in real-time.
+        </p>
+        <div class="demo-grid">
+          <div class="step-card" id="connect-step">
+            <h3>1. Connect your data</h3>
+            <form id="connect-form" class="form-grid">
+              <div class="form-row">
+                <label for="host">Host
+                  <input type="text" id="host" name="host" placeholder="db.example.com" required />
+                </label>
+              </div>
+              <div class="form-row">
+                <label for="port">Port
+                  <input type="number" id="port" name="port" value="3306" min="1" max="65535" required />
+                </label>
+              </div>
+              <div class="form-row">
+                <label for="username">Username
+                  <input type="text" id="username" name="username" required />
+                </label>
+              </div>
+              <div class="form-row">
+                <label for="password">Password
+                  <input type="password" id="password" name="password" required />
+                </label>
+              </div>
+              <div class="form-row">
+                <label for="database">Database
+                  <input type="text" id="database" name="database" required />
+                </label>
+              </div>
+              <div class="form-row">
+                <label for="driver">Driver
+                  <select id="driver" name="driver">
+                    <option value="mysql+pymysql">mysql+pymysql</option>
+                    <option value="mysql+mysqldb">mysql+mysqldb</option>
+                  </select>
+                </label>
+              </div>
+              <div class="form-row">
+                <label for="engine_url">Custom SQLAlchemy URL (optional)
+                  <input type="text" id="engine_url" name="engine_url" placeholder="mysql+pymysql://user:pass@host:3306/db" />
+                </label>
+              </div>
+              <div class="form-row">
+                <label for="options">Query Parameters (optional, key=value per line)
+                  <textarea id="options" name="options" rows="2" placeholder="charset=utf8mb4"></textarea>
+                </label>
+              </div>
+              <div class="form-row">
+                <label class="checkbox">
+                  <input type="checkbox" id="ssl" name="ssl" />
+                  <span>Use SSL (if required by your host)</span>
+                </label>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn-dark">Validate &amp; Save</button>
+              </div>
+            </form>
+            <p id="connect-status" class="status"></p>
+          </div>
+
+          <div class="step-card disabled" id="table-step">
+            <h3>2. Choose what to analyse</h3>
+            <form id="analysis-setup-form" class="form-grid">
+              <div class="form-row">
+                <label for="table-select">Table
+                  <select id="table-select" name="table" required>
+                    <option value="">Select a table</option>
+                  </select>
+                </label>
+              </div>
+              <div class="form-row">
+                <label for="feature-select">Feature columns
+                  <select id="feature-select" name="features" multiple required></select>
+                </label>
+                <small>Select one or more predictors</small>
+              </div>
+              <div class="form-row">
+                <label for="target-select">Target column
+                  <select id="target-select" name="target" required>
+                    <option value="">Choose a target</option>
+                  </select>
+                </label>
+              </div>
+              <div class="form-row">
+                <label for="date-select">Date column (optional)
+                  <select id="date-select" name="date">
+                    <option value="">None</option>
+                  </select>
+                </label>
+              </div>
+              <div class="form-row">
+                <label for="anomaly-method">Anomaly method
+                  <select id="anomaly-method" name="anomaly_method">
+                    <option value="zscore">Z-Score</option>
+                    <option value="isolation_forest">Isolation Forest</option>
+                  </select>
+                </label>
+              </div>
+              <div class="form-row">
+                <label for="anomaly-threshold">Anomaly threshold
+                  <input type="number" step="0.1" min="0.1" id="anomaly-threshold" name="anomaly_threshold" value="3.0" />
+                </label>
+              </div>
+              <div class="form-row">
+                <label for="forecast-method">Forecast method
+                  <select id="forecast-method" name="forecast_method">
+                    <option value="linear_regression">Linear Regression</option>
+                    <option value="holt_winters">Holt-Winters</option>
+                  </select>
+                </label>
+              </div>
+              <div class="form-row">
+                <label for="forecast-periods">Forecast periods
+                  <input type="number" id="forecast-periods" name="forecast_periods" value="3" min="1" max="30" />
+                </label>
+              </div>
+              <div class="form-row">
+                <label for="row-limit">Row limit per request
+                  <input type="number" id="row-limit" name="limit" value="10000" min="100" />
+                </label>
+              </div>
+              <div class="form-row">
+                <label for="max-rows">Maximum rows to process
+                  <input type="number" id="max-rows" name="max_rows" value="50000" min="1000" />
+                </label>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn-dark" id="analyze-button">Run analysis</button>
+              </div>
+            </form>
+            <p id="analysis-status" class="status"></p>
+          </div>
+
+          <div class="step-card disabled" id="result-step">
+            <h3>3. Review insights</h3>
+            <div class="result-panels">
+              <div class="result-panel">
+                <h4>Pipeline steps</h4>
+                <ul id="pipeline-steps"></ul>
+              </div>
+              <div class="result-panel">
+                <h4>Anomalies</h4>
+                <div id="anomalies-empty" class="empty-state hidden">No anomalies detected with the current configuration.</div>
+                <table id="anomalies-table" class="result-table hidden">
+                  <thead>
+                    <tr>
+                      <th>Timestamp</th>
+                      <th>Value</th>
+                      <th>Severity</th>
+                      <th>Score</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+              <div class="result-panel">
+                <h4>Forecast</h4>
+                <div id="forecast-empty" class="empty-state hidden">Run the analysis to preview forecasted values.</div>
+                <table id="forecast-table" class="result-table hidden">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Prediction</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-grid">
+      <div>
+        <div class="brand small">
+          <div class="logo-circle dark"></div>
+          <span>Forecast Alpha</span>
+        </div>
+        <p>Human Insight, Machine Precision.</p>
+      </div>
+      <div>
+        <h4>Need help?</h4>
+        <ul>
+          <li><a href="mailto:info@forecastalpha.com">info@forecastalpha.com</a></li>
+          <li><a href="{{ url_for('index') }}">Back to marketing site</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+  <script src="{{ url_for('static', filename='js/demo.js') }}" defer></script>
+</body>
+</html>

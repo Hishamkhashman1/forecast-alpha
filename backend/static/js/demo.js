@@ -339,7 +339,6 @@ async function loadTables(tableSelect, featureSelect, targetSelect, dateSelect, 
 
 (function init() {
   document.addEventListener("DOMContentLoaded", () => {
-    enableDemoScroll();
     hookForms();
   });
 })();

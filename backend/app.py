@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, redirect, url_for
 
 from .config import load_config, Config
 from .api import api_bp
@@ -24,6 +24,11 @@ def create_app(config: Config | None = None) -> Flask:
     def index() -> str:
         """Serve the landing page."""
         return render_template("index.html")
+
+    @app.route("/demo", methods=["GET"])
+    def demo() -> str:
+        """Serve the interactive demo in a dedicated window."""
+        return render_template("demo.html")
 
     @app.route("/health", methods=["GET"])
     def health() -> tuple:

@@ -49,13 +49,9 @@ The `/api` blueprint in `backend/api/routes.py` now wires the end-to-end workflo
 
 ### Frontend demo
 
-The landing page (`backend/templates/index.html`) adopts the refreshed marketing design and embeds a three-step demo:
-
-- Step 1 collects database credentials and tests connectivity.
-- Step 2 lets the user pick tables/columns and tune analysis parameters.
-- Step 3 renders pipeline steps, anomalies, and forecast tables powered by the `/api` responses.
-
-All styling lives under `backend/static/css/style.css`, and the interaction logic sits in `backend/static/js/demo.js`.
+- The landing page (`backend/templates/index.html`) keeps the marketing content and links out to a dedicated demo window (`/demo`).
+- `backend/templates/demo.html` hosts the three-step workflow (connect → configure → review) and is opened in a new tab when visitors click “Launch Demo”.
+- Styling lives in `backend/static/css/style.css`, interaction logic in `backend/static/js/demo.js` (loaded only on the demo page).
 
 ### Next Up
 
