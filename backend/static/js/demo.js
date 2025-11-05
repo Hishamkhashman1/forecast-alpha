@@ -1,4 +1,5 @@
 const state = {
+  user: null,
   connectionId: null,
   tables: [],
 };
@@ -7,13 +8,13 @@ function parseOptions(raw) {
   if (!raw) return undefined;
   const options = {};
   const lines = raw.split(/\r?\n/);
-  lines.forEach((line) => {
+  for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed) return;
+    if (!trimmed) continue;
     const [key, ...rest] = trimmed.split("=");
-    if (!key || rest.length === 0) return;
+    if (!key || rest.length === 0) continue;
     options[key.trim()] = rest.join("=").trim();
-  });
+  }
   return Object.keys(options).length ? options : undefined;
 }
 
@@ -94,23 +95,20 @@ function renderAnomalies(tableElement, emptyElement, anomalies) {
     const timestamp = document.createElement("td");
     timestamp.textContent = anomaly.timestamp;
     const value = document.createElement("td");
-    value.textContent = anomaly.value != null ? anomaly.value.toFixed(2) : "-";
+    value.textContent = anomaly.value != null ? Number(anomaly.value).toFixed(2) : "-";
     const severity = document.createElement("td");
     const badge = document.createElement("span");
     badge.classList.add("badge", anomaly.severity || "medium");
     badge.textContent = anomaly.severity || "medium";
     severity.appendChild(badge);
     const score = document.createElement("td");
-    const z = anomaly.z_score;
-    const alt = anomaly.score;
-    if (typeof z === "number") {
-      score.textContent = z.toFixed(2);
-    } else if (typeof alt === "number") {
-      score.textContent = alt.toFixed(3);
+    if (typeof anomaly.z_score === "number") {
+      score.textContent = anomaly.z_score.toFixed(2);
+    } else if (typeof anomaly.score === "number") {
+      score.textContent = anomaly.score.toFixed(3);
     } else {
       score.textContent = "-";
     }
-
     row.append(timestamp, value, severity, score);
     body.appendChild(row);
   });
@@ -136,7 +134,7 @@ function renderForecast(tableElement, emptyElement, forecast) {
     const dateCell = document.createElement("td");
     dateCell.textContent = point.date;
     const predictionCell = document.createElement("td");
-    predictionCell.textContent = point.prediction != null ? point.prediction.toFixed(2) : "-";
+    predictionCell.textContent = point.prediction != null ? Number(point.prediction).toFixed(2) : "-";
     row.append(dateCell, predictionCell);
     body.appendChild(row);
   });
@@ -156,36 +154,19 @@ async function fetchJson(url, options) {
   return data;
 }
 
-function enableDemoScroll() {
-  const launchButton = document.getElementById("launch-demo");
-  const scrollButtons = document.querySelectorAll("[data-scroll]");
-  const scrollToTarget = (target) => {
-    if (!target) return;
-    const section = document.querySelector(target);
-    if (section) {
-      section.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-  if (launchButton) {
-    launchButton.addEventListener("click", (event) => {
-      event.preventDefault();
-      scrollToTarget("#demo");
-    });
-  }
-  scrollButtons.forEach((button) => {
-    button.addEventListener("click", (event) => {
-      const selector = button.getAttribute("data-scroll");
-      if (selector) {
-        event.preventDefault();
-        scrollToTarget(selector);
-      }
-    });
-  });
-}
-
 function hookForms() {
+  const authSection = document.getElementById("auth-section");
+  const portalSection = document.getElementById("portal-section");
+  const welcomeCopy = document.getElementById("welcome-copy");
+  const resetButton = document.getElementById("reset-demo");
+  const authForm = document.getElementById("auth-form");
+  const authStatus = document.getElementById("auth-status");
+  const showSignup = document.getElementById("show-signup");
+  const showSignin = document.getElementById("show-signin");
+
   const connectForm = document.getElementById("connect-form");
   const connectStatus = document.getElementById("connect-status");
+  const connectStep = document.getElementById("connect-step");
   const tableStep = document.getElementById("table-step");
   const analysisForm = document.getElementById("analysis-setup-form");
   const analysisStatus = document.getElementById("analysis-status");
@@ -201,22 +182,141 @@ function hookForms() {
   const pipelineList = document.getElementById("pipeline-steps");
   const analyzeButton = document.getElementById("analyze-button");
 
+  const toggleAuthMode = (mode) => {
+    const isSignup = mode === "signup";
+    if (authForm) {
+      authForm.dataset.mode = mode;
+    }
+    if (showSignup && showSignin) {
+      showSignup.setAttribute("aria-pressed", isSignup ? "true" : "false");
+      showSignin.setAttribute("aria-pressed", isSignup ? "false" : "true");
+    }
+    if (authForm) {
+      authForm.querySelectorAll("[data-signup-only]").forEach((el) => {
+        el.classList.toggle("hidden", !isSignup);
+        const input = el.querySelector("input");
+        if (input) {
+          input.required = isSignup;
+          if (!isSignup) {
+            if (input.type === "checkbox") {
+              input.checked = false;
+            } else {
+              input.value = "";
+            }
+          }
+        }
+      });
+      const submit = document.getElementById("auth-submit");
+      if (submit) {
+        submit.textContent = isSignup ? "Create account" : "Sign in";
+      }
+    }
+  };
+
+  if (showSignup && showSignin) {
+    showSignup.addEventListener("click", () => toggleAuthMode("signup"));
+    showSignin.addEventListener("click", () => toggleAuthMode("signin"));
+  }
+
+  if (authForm) {
+    authForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const formData = new FormData(authForm);
+      const mode = authForm.dataset.mode || "signup";
+      const email = formData.get("email")?.toString().trim();
+      const password = formData.get("password")?.toString();
+      const name = mode === "signup" ? formData.get("name")?.toString().trim() : undefined;
+
+      const emailPattern = /[^@\s]+@[^@\s]+\.[^@\s]+/;
+      if (!email || !emailPattern.test(email)) {
+        setStatus(authStatus, "Enter a valid email address.", "error");
+        return;
+      }
+
+      if (!password || password.length < 6) {
+        setStatus(authStatus, "Password must be at least 6 characters.", "error");
+        return;
+      }
+
+      if (mode === "signup") {
+        const consent = document.getElementById("auth-consent");
+        if (consent && !consent.checked) {
+          setStatus(authStatus, "Please accept the terms to continue.", "error");
+          return;
+        }
+        if (!name) {
+          setStatus(authStatus, "Tell us your name so we can personalise the demo.", "error");
+          return;
+        }
+      }
+
+      state.user = {
+        name: name || email.split("@")[0],
+        email,
+        mode,
+      };
+      setStatus(authStatus, mode === "signup" ? "Account created for this session." : "Signed in for demo.", "success");
+      if (welcomeCopy) {
+        welcomeCopy.textContent = `Welcome, ${state.user.name}! Let’s connect to your data and surface insights.`;
+      }
+      if (authSection && portalSection) {
+        authSection.classList.add("hidden");
+        portalSection.classList.remove("hidden");
+      }
+      toggleStep(connectStep, true);
+      toggleStep(tableStep, false);
+      toggleStep(resultStep, false);
+      setStatus(connectStatus, "Ready when you are—enter your database credentials.");
+    });
+  }
+
+  if (resetButton) {
+    resetButton.addEventListener("click", () => {
+      state.user = null;
+      state.connectionId = null;
+      state.tables = [];
+      if (authForm) {
+        authForm.reset();
+        toggleAuthMode("signup");
+      }
+      setStatus(authStatus, "", "info");
+      if (authSection && portalSection) {
+        authSection.classList.remove("hidden");
+        portalSection.classList.add("hidden");
+      }
+      toggleStep(connectStep, false);
+      toggleStep(tableStep, false);
+      toggleStep(resultStep, false);
+      setStatus(connectStatus, "");
+      setStatus(analysisStatus, "");
+      renderPipelineSteps(pipelineList, []);
+      renderAnomalies(anomaliesTable, anomaliesEmpty, []);
+      renderForecast(forecastTable, forecastEmpty, []);
+    });
+  }
+
   if (connectForm) {
     connectForm.addEventListener("submit", async (event) => {
       event.preventDefault();
+      if (!state.user) {
+        setStatus(connectStatus, "Please sign up or sign in to continue.", "error");
+        toggleStep(connectStep, false);
+        return;
+      }
+
       setStatus(connectStatus, "Validating credentials…");
 
       const formData = new FormData(connectForm);
       const payload = {
-        host: formData.get("host")?.trim(),
+        host: formData.get("host")?.toString().trim(),
         port: Number(formData.get("port")) || 3306,
-        username: formData.get("username")?.trim(),
-        password: formData.get("password") || "",
-        database: formData.get("database")?.trim(),
-        driver: formData.get("driver") || "mysql+pymysql",
+        username: formData.get("username")?.toString().trim(),
+        password: formData.get("password")?.toString() || "",
+        database: formData.get("database")?.toString().trim(),
+        driver: formData.get("driver")?.toString() || "mysql+pymysql",
         ssl: formData.get("ssl") === "on",
-        engine_url: formData.get("engine_url")?.trim() || undefined,
-        options: parseOptions(formData.get("options")),
+        engine_url: formData.get("engine_url")?.toString().trim() || undefined,
+        options: parseOptions(formData.get("options")?.toString() || ""),
       };
 
       try {
@@ -227,12 +327,20 @@ function hookForms() {
         });
         state.connectionId = data.connection_id;
         setStatus(connectStatus, "Connection saved. Tables loading…", "success");
-        await loadTables(tableSelect, featureSelect, targetSelect, dateSelect, tableStep, analysisStatus);
+        await loadTables(
+          tableSelect,
+          featureSelect,
+          targetSelect,
+          dateSelect,
+          tableStep,
+          analysisStatus
+        );
       } catch (error) {
         console.error(error);
         setStatus(connectStatus, error.message || "Unable to connect", "error");
         state.connectionId = null;
         toggleStep(tableStep, false);
+        toggleStep(resultStep, false);
       }
     });
   }
@@ -316,10 +424,14 @@ async function loadTables(tableSelect, featureSelect, targetSelect, dateSelect, 
   try {
     const data = await fetchJson(`/api/tables?connection_id=${encodeURIComponent(state.connectionId)}`);
     state.tables = data.tables || [];
-    const hasTables = state.tables.length > 0;
-    if (!hasTables) {
-      setStatus(document.getElementById("connect-status"), "Connection succeeded but no tables were returned.", "error");
+    if (state.tables.length === 0) {
+      setStatus(
+        document.getElementById("connect-status"),
+        "Connection succeeded but no tables were returned.",
+        "error"
+      );
       toggleStep(tableStep, false);
+      toggleStep(document.getElementById("result-step"), false);
       return;
     }
     populateSelect(tableSelect, state.tables.map((item) => item.name), { emptyLabel: "Select a table" });
@@ -327,13 +439,16 @@ async function loadTables(tableSelect, featureSelect, targetSelect, dateSelect, 
     populateSelect(targetSelect, [], { emptyLabel: "Choose a target" });
     populateSelect(dateSelect, [""], { emptyLabel: "None" });
     toggleStep(tableStep, true);
-    if (analysisStatus) {
-      setStatus(analysisStatus, "Choose a table and configure your analysis.");
-    }
+    setStatus(analysisStatus, "Choose a table and configure your analysis.");
   } catch (error) {
     console.error(error);
-    setStatus(document.getElementById("connect-status"), error.message || "Unable to fetch tables.", "error");
+    setStatus(
+      document.getElementById("connect-status"),
+      error.message || "Unable to fetch tables.",
+      "error"
+    );
     toggleStep(tableStep, false);
+    toggleStep(document.getElementById("result-step"), false);
   }
 }
 

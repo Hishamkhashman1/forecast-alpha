@@ -20,13 +20,59 @@
     </div>
   </header>
 
-  <main>
-    <section class="section demo-section light-bg">
+  <main class="demo-main">
+    <section class="section demo-section light-bg" id="auth-section">
+      <div class="container auth-container">
+        <div class="auth-card">
+          <h1>Welcome to Forecast Alpha</h1>
+          <p class="demo-subtitle">Sign up for the guided demo or sign in to resume where you left off.</p>
+          <div class="auth-toggle">
+            <button class="btn-dark" id="show-signup" aria-pressed="true">Sign Up</button>
+            <button class="btn-outline" id="show-signin" aria-pressed="false">Sign In</button>
+          </div>
+          <form id="auth-form" class="form-grid" data-mode="signup">
+            <div class="form-row" data-signup-only>
+              <label for="auth-name">Full name
+                <input type="text" id="auth-name" name="name" placeholder="Jane Doe" required />
+              </label>
+            </div>
+            <div class="form-row">
+              <label for="auth-email">Work email
+                <input type="email" id="auth-email" name="email" placeholder="you@company.com" required />
+              </label>
+            </div>
+            <div class="form-row">
+              <label for="auth-password">Password
+                <input type="password" id="auth-password" name="password" placeholder="Choose a password" required />
+              </label>
+              <small>Password must be at least 6 characters.</small>
+            </div>
+            <div class="form-row" data-signup-only>
+              <label class="checkbox">
+                <input type="checkbox" id="auth-consent" required />
+                <span>I agree to the demo terms &amp; privacy notice.</span>
+              </label>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn-dark" id="auth-submit">Create account</button>
+            </div>
+          </form>
+          <p id="auth-status" class="status"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section demo-section light-bg hidden" id="portal-section">
       <div class="container">
-        <h1>Interactive Demo</h1>
-        <p class="demo-subtitle">
-          Validate your connection, select the data you want to inspect, and see anomalies plus forecasts generated in real-time.
-        </p>
+        <header class="portal-header">
+          <div>
+            <h1>Demo Workspace</h1>
+            <p class="demo-subtitle" id="welcome-copy">Let’s connect to your data and surface anomalies in minutes.</p>
+          </div>
+          <div class="portal-actions">
+            <button class="btn-outline" id="reset-demo">Restart demo</button>
+          </div>
+        </header>
         <div class="demo-grid">
           <div class="step-card" id="connect-step">
             <h3>1. Connect your data</h3>

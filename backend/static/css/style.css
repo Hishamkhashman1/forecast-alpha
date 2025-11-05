@@ -14,6 +14,87 @@ html, body {
   scroll-behavior: smooth;
 }
 
+body.demo-page {
+  background-color: #f8fafc;
+}
+
+.demo-main {
+  min-height: calc(100vh - 80px);
+}
+
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 70vh;
+}
+
+.auth-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  padding: 2.5rem 2.8rem;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 25px 50px -12px rgba(59, 130, 246, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
+}
+
+.auth-card h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.auth-toggle {
+  display: inline-flex;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  padding: 0.2rem;
+  background: #f9fafb;
+  gap: 0.25rem;
+}
+
+.auth-toggle button {
+  border-radius: 999px;
+  font-size: 0.85rem;
+  padding: 0.45rem 1.1rem;
+}
+
+.auth-toggle button[aria-pressed="true"] {
+  background: #111827;
+  color: #f9fafb;
+  border: none;
+}
+
+.auth-toggle button[aria-pressed="false"] {
+  background: transparent;
+  color: #1f2937;
+  border: none;
+}
+
+.auth-toggle button[aria-pressed="false"]:hover {
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.hidden {
+  display: none !important;
+}
+
+.portal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+
+.portal-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
 /* === GLOBAL CONTAINER === */
 .container {
   width: 100%;

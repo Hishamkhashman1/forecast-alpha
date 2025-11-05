@@ -50,8 +50,8 @@ The `/api` blueprint in `backend/api/routes.py` now wires the end-to-end workflo
 ### Frontend demo
 
 - The landing page (`backend/templates/index.html`) keeps the marketing content and links out to a dedicated demo window (`/demo`).
-- `backend/templates/demo.html` hosts the three-step workflow (connect → configure → review) and is opened in a new tab when visitors click “Launch Demo”.
-- Styling lives in `backend/static/css/style.css`, interaction logic in `backend/static/js/demo.js` (loaded only on the demo page).
+- `backend/templates/demo.html` walks users through registration → connection → configuration → insight review in a guided four-step flow, opened in a new tab when visitors click “Launch Demo”.
+- Styling lives in `backend/static/css/style.css`, interaction logic in `backend/static/js/demo.js` (loaded only on the demo page). The introduction form simply captures details in-memory to gate the rest of the demo—no data is persisted.
 
 ### Next Up
 
